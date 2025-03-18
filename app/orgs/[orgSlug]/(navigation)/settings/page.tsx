@@ -4,5 +4,6 @@ import { OrgDetailsForm } from "./(details)/org-details-form";
 
 export default async function RoutePage(props: PageParams) {
   const { org: organization } = await getRequiredCurrentOrgCache(["ADMIN"]);
+
   return <OrgDetailsForm defaultValues={organization} />;
 }

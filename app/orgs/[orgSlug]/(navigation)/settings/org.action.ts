@@ -1,6 +1,8 @@
 "use server";
 
 import { ActionError, orgAction } from "@/lib/actions/safe-actions";
+import { hashStringWithSalt } from "@/lib/auth/credentials-provider";
+import { env } from "@/lib/env";
 import { sendEmail } from "@/lib/mail/sendEmail";
 import { prisma } from "@/lib/prisma";
 import { getOrgsMembers } from "@/query/org/get-orgs-members";
@@ -160,5 +162,81 @@ export const inviteUserInOrganizationAction = orgAction
       }),
     });
 
+    return { identifier: verificationToken.identifier };
+  });
+
+export const addUserInOrganizationAction = orgAction
+  .metadata({
+    roles: ["OWNER", "ADMIN"],
+  })
+  .schema(
+    z.object({
+      name: z.string(),
+      email: z.string().email(),
+      role: z.enum(["OWNER", "ADMIN", "MEMBER"]),
+    }),
+  )
+  .action(async ({ parsedInput: { name, email, role }, ctx }) => {
+    if (
+      await prisma.user.findFirst({
+        where: {
+          email,
+        },
+      })
+    ) {
+      throw new ActionError("This email is already exist");
+    }
+
+    if (
+      await prisma.verificationToken.findFirst({
+        where: {
+          identifier: `${email}-invite-${ctx.org.id}`,
+          expires: {
+            gt: new Date(),
+          },
+        },
+      })
+    ) {
+      throw new ActionError("User already invited");
+    }
+
+    const randomPwd = nanoid(16);
+
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        passwordHash: hashStringWithSalt(String(randomPwd), env.AUTH_SECRET),
+        organizations: {
+          create: {
+            organizationId: ctx.org.id,
+            roles: [`${role}`],
+          },
+        },
+      },
+    });
+
+    const verificationToken = await prisma.verificationToken.create({
+      data: {
+        identifier: `${email}-invite-${ctx.org.id}`,
+        expires: addHours(new Date(), 1),
+        token: nanoid(32),
+        data: {
+          orgId: ctx.org.id,
+          email,
+        },
+      },
+    });
+
+    await sendEmail({
+      to: email,
+      subject: `Invitation to join ${ctx.org.name}`,
+      react: OrganizationInvitationEmail({
+        token: verificationToken.token,
+        orgSlug: ctx.org.slug,
+        organizationName: ctx.org.name,
+      }),
+    });
+    console.log("NewUser has been added", newUser);
     return { identifier: verificationToken.identifier };
   });

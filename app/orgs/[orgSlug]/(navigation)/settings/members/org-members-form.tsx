@@ -34,7 +34,6 @@ import { updateOrganizationMemberAction } from "../org.action";
 import type { OrgMemberFormSchemaType } from "../org.schema";
 import { OrgMemberFormSchema } from "../org.schema";
 import { OrganizationInviteMemberForm } from "./org-invite-member-form";
-import { OrganizationNewMemberForm } from "./org-new-member-form";
 
 type OrgMembersFormProps = {
   defaultValues: OrgMemberFormSchemaType;
@@ -179,9 +178,9 @@ export const OrgMembersForm = ({
             </div>
           )}
           {form.watch("members").length < maxMembers ? (
-            <div className="flex items-center gap-4">
+            <div className="mt-4 flex items-center gap-4">
               <OrganizationInviteMemberForm />
-              <OrganizationNewMemberForm />
+              {/* <OrganizationNewMemberForm /> */}
             </div>
           ) : (
             <div className="flex items-center gap-4">
@@ -232,7 +231,7 @@ export const OrgMembersForm = ({
                 <Zap className="mr-2" size={16} />
                 Invite member
               </Button>
-              <OrganizationNewMemberForm />
+              {/* <OrganizationNewMemberForm /> */}
             </div>
           )}
         </CardContent>
