@@ -16,6 +16,7 @@ model Movie {
   active        Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  User          User[]
 }
 
 model Cinema {
@@ -23,19 +24,21 @@ model Cinema {
   idx          Int           @unique @default(autoincrement())
   city         String
   cineSessions CineSession[]
+  reservation  Reservation[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
 
 model Hall {
-  id              String   @id @default(nanoid())
-  idx             Int      @unique @default(autoincrement())
+  id              String        @id @default(nanoid())
+  idx             Int           @unique @default(autoincrement())
   hallNumber      Int
   type            String
   capacity        Int
   disabled_places Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  cineSession     CineSession[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model City {
@@ -57,8 +60,9 @@ model CineSession {
   sessionEnd   DateTime
   date         DateTime
   cineId       String
-  cinema       Cinema[]      @relation(fields: [cineId], references: [id])
-  hall         Hall
+  cinema       Cinema[]
+  hallId       String
+  hall         Hall          @relation(fields: [hallId], references: [id])
   note         Int
   reservation  Reservation[]
   pricing      Int
@@ -67,17 +71,19 @@ model CineSession {
 }
 
 model Reservation {
-  id             String   @id @default(nanoid())
-  idx            Int      @unique @default(autoincrement())
+  id             String       @id @default(nanoid())
+  idx            Int          @unique @default(autoincrement())
   userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   qr_code        String
   status         String
   movieId        String
   cineId         String
-  cinema         Cinema   @relation(fields: [cineId], references: [id])
+  cinema         Cinema       @relation(fields: [cineId], references: [id])
+  cineSessionId  String?
+  cineSession    CineSession? @relation(fields: [cineSessionId], references: [id])
   quantity       Int
   disabled_paces Int
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
